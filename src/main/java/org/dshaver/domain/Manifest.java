@@ -2,23 +2,20 @@ package org.dshaver.domain;
 
 import com.google.common.collect.Multimap;
 import lombok.Data;
-import org.dshaver.domain.gamefiles.unititem.UnitItem;
-import org.dshaver.domain.gamefiles.unititem.UnitItemType;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @Data
-public class Manifest {
+public class Manifest<T, U> {
     Set<String> ids;
 
-    Map<String, UnitItem> unitItemsMap;
+    Map<String, U> idMap;
 
-    Multimap<UnitItemType, UnitItem> typeIndex;
+    Multimap<T, U> typeIndex;
 
-    public Collection<UnitItem> getByType(UnitItemType type) {
+    public Collection<U> getByType(T type) {
         return typeIndex.get(type);
     }
 }

@@ -1,7 +1,5 @@
 package org.dshaver.service;
 
-import org.dshaver.domain.gamefiles.unit.Unit;
-
 import java.util.Map;
 
 public class GameFileService {
@@ -25,10 +23,5 @@ public class GameFileService {
         }
 
         return localizedText.get(key);
-    }
-
-
-    public Unit readUnitFile(String unitId) {
-        return FileTools.readUnitFile(unitId);
     }
 }

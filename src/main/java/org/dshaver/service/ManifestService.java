@@ -4,12 +4,16 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.dshaver.domain.Manifest;
 import org.dshaver.domain.gamefiles.unit.Unit;
+import org.dshaver.domain.gamefiles.unit.UnitType;
 import org.dshaver.domain.gamefiles.unititem.UnitItem;
 import org.dshaver.domain.gamefiles.unititem.UnitItemType;
 
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.dshaver.service.UnitService.getDescriptionProperty;
+import static org.dshaver.service.UnitService.getNameProperty;
 
 public class ManifestService {
 
@@ -29,8 +33,8 @@ public class ManifestService {
         return localizedText;
     }
 
-    public Manifest loadUnitItemManifest() {
-        Manifest unitItemManifest = FileTools.loadUnitItemManifest(steamDir);
+    public Manifest<UnitItemType, UnitItem> loadUnitItemManifest() {
+        Manifest<UnitItemType, UnitItem> unitItemManifest = FileTools.loadUnitItemManifest(steamDir);
 
         System.out.println(STR."Loaded \{unitItemManifest.getIds().size()} unitItemIds");
 
@@ -40,7 +44,7 @@ public class ManifestService {
                 .map(this::populateUnitItem)
                 .collect(Collectors.toMap(UnitItem::getId, Function.identity()));
 
-        unitItemManifest.setUnitItemsMap(unitItemMap);
+        unitItemManifest.setIdMap(unitItemMap);
 
         // Organize by type
         Multimap<UnitItemType, UnitItem> typeIndex = ArrayListMultimap.create();

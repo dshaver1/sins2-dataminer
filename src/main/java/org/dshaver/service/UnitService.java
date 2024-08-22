@@ -1,102 +1,59 @@
 package org.dshaver.service;
 
-import org.dshaver.domain.gamefiles.unit.Unit;
-import org.dshaver.domain.gamefiles.unit.Weapon;
-import org.dshaver.domain.gamefiles.unit.WeaponFile;
-import org.dshaver.domain.gamefiles.unit.Weapons;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import org.apache.commons.lang3.StringUtils;
+import org.dshaver.domain.Manifest;
+import org.dshaver.domain.gamefiles.unit.*;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class UnitService {
+    private final String steamDir;
     private final GameFileService gameFileService;
 
-    public UnitService(GameFileService gameFileService) {
+    public UnitService(GameFileService gameFileService, String steamDir) {
         this.gameFileService = gameFileService;
-    }
-
-    public List<Unit> loadAllUnits() {
-        Set<String> idList = Set.of(
-                "advent_scout_corvette",
-                "advent_colony_frigate",
-                "advent_light_frigate",
-                "advent_gunship_corvette",
-                "advent_siege_frigate",
-                "advent_defense_cruiser",
-                "advent_guardian_cruiser",
-                "advent_subjugator_cruiser",
-                "advent_envoy_frigate",
-                "advent_long_range_cruiser",
-                "advent_missile_frigate",
-                "advent_heavy_cruiser",
-                "advent_carrier_cruiser",
-                "advent_battle_capital_ship",
-                "advent_battle_psionic_capital_ship",
-                "advent_carrier_capital_ship",
-                "advent_colony_capital_ship",
-                "advent_planet_psionic_capital_ship",
-                "trader_antiarmor_frigate",
-                "trader_antifighter_frigate",
-                "trader_carrier_cruiser",
-                "trader_colony_frigate",
-                "trader_envoy_frigate",
-                "trader_heavy_cruiser",
-                "trader_light_frigate",
-                "trader_long_range_cruiser",
-                "trader_missile_battery_frigate",
-                "trader_robotics_cruiser",
-                "trader_scout_corvette",
-                "trader_siege_frigate",
-                "trader_skirmisher_corvette_frigate",
-                "trader_support_capital_ship",
-                "trader_torpedo_cruiser",
-                "trader_siege_capital_ship",
-                "trader_colony_capital_ship",
-                "trader_carrier_capital_ship",
-                "trader_battle_capital_ship",
-                "trader_loyalist_titan",
-                "trader_rebel_titan",
-                "vasari_scout_corvette",
-                "vasari_light_frigate",
-                "vasari_heavy_cruiser",
-                "vasari_siege_cruiser",
-                "vasari_long_range_frigate",
-                "vasari_colony_cruiser",
-                "vasari_carrier_cruiser",
-                "vasari_anticorvette_corvette",
-                "vasari_antiarmor_cruiser",
-                "vasari_overseer_cruiser",
-                "vasari_fabricator_cruiser",
-                "vasari_raider_corvette",
-                "vasari_battle_capital_ship",
-                "vasari_carrier_capital_ship",
-                "vasari_siege_capital_ship",
-                "vasari_marauder_capital_ship",
-                "vasari_colony_capital_ship");
-
-        return loadUnits(idList);
+        this.steamDir = steamDir;
     }
 
 
-    public List<Unit> loadUnits(Collection<String> idList) {
-        List<Unit> units = idList.stream().map(id -> {
-            Unit unit = gameFileService.readUnitFile(id);
+    public Manifest<UnitType, Unit> loadUnitManifest() {
+        Manifest<UnitType, Unit> unitManifest = FileTools.loadUnitManifest(steamDir);
 
-            if (unit.getWeapons() != null) {
-                unit = collapseWeapons(unit);
-            }
+        System.out.println(STR."Loaded \{unitManifest.getIds().size()} unitIds");
 
-            unit.setId(id);
-            unit.setName(gameFileService.getLocalizedText(getNameProperty(id)));
-            unit.setDescription(gameFileService.getLocalizedText(getDescriptionProperty(id)));
-            unit.findRace();
+        // Organize by id
+        Map<String, Unit> unitIdMap = unitManifest.getIds().stream()
+                .map(id -> FileTools.readUnitFile(steamDir, id))
+                .filter(unit -> StringUtils.isNotBlank(unit.getTargetFilterUnitType()))
+                .filter(unit -> unit.getUnitType().isShip())
+                .map(this::populateUnit)
+                .collect(Collectors.toMap(Unit::getId, Function.identity()));
 
-            return unit;
-        }).toList();
+        unitManifest.setIdMap(unitIdMap);
 
-        return units;
+        // Organize by type
+        Multimap<UnitType, Unit> typeIndex = ArrayListMultimap.create();
+        unitIdMap.values().forEach(unit -> typeIndex.put(unit.getUnitType(), unit));
+        unitManifest.setTypeIndex(typeIndex);
+
+        return unitManifest;
+    }
+
+    private Unit populateUnit(Unit unit) {
+        if (unit.getWeapons() != null) {
+            unit = collapseWeapons(unit);
+        }
+
+        unit.setName(gameFileService.getLocalizedText(getNameProperty(unit.getId())));
+        unit.setDescription(gameFileService.getLocalizedText(getDescriptionProperty(unit.getId())));
+
+        return unit;
     }
 
 

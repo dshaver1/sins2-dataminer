@@ -5,13 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.type.MapType;
-import org.checkerframework.common.value.qual.ArrayLenRange;
+import org.apache.commons.lang3.StringUtils;
 import org.dshaver.Main;
 import org.dshaver.domain.Manifest;
+import org.dshaver.domain.gamefiles.ManifestFile;
 import org.dshaver.domain.export.WikiPlanetUpgrade;
 import org.dshaver.domain.export.WikiUnit;
 import org.dshaver.domain.gamefiles.unit.Unit;
+import org.dshaver.domain.gamefiles.unit.UnitType;
 import org.dshaver.domain.gamefiles.unititem.UnitItem;
+import org.dshaver.domain.gamefiles.unititem.UnitItemType;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +32,7 @@ public class FileTools {
 
     private static final String ENTITY_DIR = "entities";
     private static final String UNIT_ITEM_MANIFEST_FILE_PATH = "entities/unit_item.entity_manifest";
+    private static final String UNIT_MANIFEST_FILE_PATH = "entities/unit.entity_manifest";
     private static final String LOCALIZED_TEXT_FILE_PATH = "localized_text/en.localized_text";
     private static final String UNIT_JSON_OUTPUT_NAME = "SoaSE2_units.json";
     private static final String PLANET_UPGRADE_OUTPUT_NAME = "SoaSE2_planet_upgrades.json";
@@ -83,10 +87,20 @@ public class FileTools {
         }
     }
 
-    public static Unit readUnitFile(String unitId) {
-        System.out.println("Reading unit file for " + unitId);
-        try (InputStream is = Unit.class.getResourceAsStream("/steamdir/entities/" + unitId + ".unit")) {
-            return objectMapper.readValue(is, Unit.class);
+    public static Unit readUnitFile(String steamDir, String unitId) {
+        var unitPath = getEntityPath(steamDir, STR."\{unitId}.unit");
+        System.out.println(STR."Reading unit file \{unitPath}");
+
+        try (InputStream is = Files.newInputStream(unitPath)) {
+            Unit unit = objectMapper.readValue(is, Unit.class);
+            unit.setId(unitId);
+            unit.findRace();
+
+            if (StringUtils.isNotBlank(unit.getTargetFilterUnitType())) {
+                unit.setUnitType(UnitType.valueOf(unit.getTargetFilterUnitType()));
+            }
+
+            return unit;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -121,7 +135,18 @@ public class FileTools {
     public static Map<String, WikiUnit> getAllWikiUnits(Collection<Unit> units) {
         return units.stream()
                 .map(WikiUnit::fromUnit)
-                .collect(Collectors.toMap(u -> STR."\{u.getRace()} \{u.getName()}", Function.identity()));
+                .collect(Collectors.toMap(FileTools::unitKeyMapper, Function.identity()));
+    }
+
+    private static String unitKeyMapper(WikiUnit wikiUnit) {
+        List<String> keyComponents = new ArrayList<>();
+        if (StringUtils.isNotBlank(wikiUnit.getRace())) {
+            keyComponents.add(wikiUnit.getRace());
+        }
+
+        keyComponents.add(wikiUnit.getName());
+
+        return String.join(" ", keyComponents);
     }
 
     public static void writePlanetUpgradesJsonFile(Collection<UnitItem> unitItems) {
@@ -164,12 +189,31 @@ public class FileTools {
         return Path.of(steamDir).resolve(filePart);
     }
 
-    public static Manifest loadUnitItemManifest(String steamDir) {
+    public static Manifest<UnitItemType, UnitItem> loadUnitItemManifest(String steamDir) {
         System.out.println("Reading unit item manifest");
         Path path = getPath(steamDir, UNIT_ITEM_MANIFEST_FILE_PATH);
 
         try (InputStream is = Files.newInputStream(path)) {
-            return objectMapper.readValue(is, Manifest.class);
+            ManifestFile manifestFile = objectMapper.readValue(is, ManifestFile.class);
+            Manifest<UnitItemType, UnitItem> manifest = new Manifest<>();
+            manifest.setIds(manifestFile.getIds());
+
+            return manifest;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Manifest<UnitType, Unit> loadUnitManifest(String steamDir) {
+        System.out.println("Reading unit manifest");
+        Path path = getPath(steamDir, UNIT_MANIFEST_FILE_PATH);
+
+        try (InputStream is = Files.newInputStream(path)) {
+            ManifestFile manifestFile = objectMapper.readValue(is, ManifestFile.class);
+            Manifest<UnitType, Unit> manifest = new Manifest<>();
+            manifest.setIds(manifestFile.getIds());
+
+            return manifest;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

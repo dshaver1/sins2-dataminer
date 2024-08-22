@@ -25,6 +25,7 @@ public class Unit {
     String description;
     String race;
     String targetFilterUnitType;
+    UnitType unitType;
 
     Weapons weapons;
     Physics physics;
