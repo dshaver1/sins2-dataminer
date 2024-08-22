@@ -27,13 +27,13 @@ import static org.apache.commons.io.FileUtils.writeStringToFile;
 
 public class FileTools {
 
-    private static final String UNIT_ITEM_MANIFEST_FILE_PATH = "/steamdir/entities/unit_item.entity_manifest";
-    private static final String LOCALIZED_TEXT_FILE_PATH = "/steamdir/localized_text/en.localized_text";
+    private static final String ENTITY_DIR = "entities";
+    private static final String UNIT_ITEM_MANIFEST_FILE_PATH = "entities/unit_item.entity_manifest";
+    private static final String LOCALIZED_TEXT_FILE_PATH = "localized_text/en.localized_text";
     private static final String UNIT_JSON_OUTPUT_NAME = "SoaSE2_units.json";
     private static final String PLANET_UPGRADE_OUTPUT_NAME = "SoaSE2_planet_upgrades.json";
     private static final ObjectMapper objectMapper;
     private static File wikiTargetDir;
-    private static Map<String, String> localizedText;
 
     static {
         String path = Main.class.getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -45,8 +45,6 @@ public class FileTools {
         objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-
-        localizedText = FileTools.readLocalizedTextFile();
     }
 
     public static ObjectMapper getObjectMapper() {
@@ -73,12 +71,12 @@ public class FileTools {
         });
     }
 
-    public static Map<String, String> readLocalizedTextFile() {
-        InputStream localizedTextInput = Unit.class.getResourceAsStream(LOCALIZED_TEXT_FILE_PATH);
+    public static Map<String, String> readLocalizedTextFile(String steamDir) {
+        Path path = getPath(steamDir, LOCALIZED_TEXT_FILE_PATH);
 
-        MapType typeReference = objectMapper.getTypeFactory().constructMapType(HashMap.class, String.class, String.class);
+        try (InputStream localizedTextInput = Files.newInputStream(path)) {
+            MapType typeReference = objectMapper.getTypeFactory().constructMapType(HashMap.class, String.class, String.class);
 
-        try {
             return objectMapper.readValue(localizedTextInput, typeReference);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -94,17 +92,14 @@ public class FileTools {
         }
     }
 
-    public static UnitItem readUnitItemFile(String unitItemId) {
-        var unitItemPath = STR."/steamdir/entities/\{unitItemId}.unit_item";
-        System.out.println(STR."Reading unitItem file \{unitItemId}");
+    public static UnitItem readUnitItemFile(String steamDir, String unitItemId) {
+        var unitItemPath = getEntityPath(steamDir, STR."\{unitItemId}.unit_item");
+        System.out.println(STR."Reading unitItem file \{unitItemPath}");
 
-        try (InputStream is = Unit.class.getResourceAsStream(unitItemPath)) {
+        try (InputStream is = Files.newInputStream(unitItemPath)) {
             UnitItem unitItem = objectMapper.readValue(is, UnitItem.class);
+
             unitItem.setId(unitItemId);
-            unitItem.setName(localizedText.get(unitItem.getName()));
-            unitItem.setDescription(localizedText.get(unitItem.getDescription()));
-            unitItem.findRace();
-            unitItem.findFaction();
 
             return unitItem;
         } catch (IOException e) {
@@ -161,9 +156,19 @@ public class FileTools {
         return String.join(" ", keyComponents);
     }
 
-    public static Manifest loadUnitItemManifest() {
+    public static Path getEntityPath(String steamDir, String filename) {
+        return Path.of(steamDir).resolve(ENTITY_DIR).resolve(filename);
+    }
+
+    public static Path getPath(String steamDir, String filePart) {
+        return Path.of(steamDir).resolve(filePart);
+    }
+
+    public static Manifest loadUnitItemManifest(String steamDir) {
         System.out.println("Reading unit item manifest");
-        try (InputStream is = Unit.class.getResourceAsStream(UNIT_ITEM_MANIFEST_FILE_PATH)) {
+        Path path = getPath(steamDir, UNIT_ITEM_MANIFEST_FILE_PATH);
+
+        try (InputStream is = Files.newInputStream(path)) {
             return objectMapper.readValue(is, Manifest.class);
         } catch (IOException e) {
             throw new RuntimeException(e);

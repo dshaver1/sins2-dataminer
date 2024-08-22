@@ -23,6 +23,6 @@ project so that your IDE can index them and you can actually find stuff in them:
 
 ### Running
 
-1. Set your steamapps path if it's different than mine with `-Dsteamdir='C:\Program Files (x86)\Steam\steamapps\common\Sins2\'`
+1. Set your steamapps path if it's different than mine with `-Dsteamdir="C:\Program Files (x86)\Steam\steamapps\common\Sins2\"`(quotes are important if you have spaces in the path like me.)
 2. Run `Main.java`
 3. Json files will show up in `.\target\wiki\`

@@ -12,10 +12,11 @@ public class Main {
     public static PlanetService planetService;
 
     public static void main(String[] args) {
-        System.out.println("Starting!");
+        String steamDir = args[0].split("=")[1].replace("\"", "");
+        System.out.println("Starting with steamdir " + steamDir);
 
-        unitService = new UnitService(new GameFileService());
-        planetService = new PlanetService(new ManifestService());
+        unitService = new UnitService(new GameFileService(steamDir));
+        planetService = new PlanetService(new ManifestService(steamDir));
 
         loadFilesAndExport();
     }
