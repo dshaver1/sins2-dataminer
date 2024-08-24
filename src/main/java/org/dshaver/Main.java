@@ -30,9 +30,9 @@ public class Main {
         FileTools.writeUnitsJsonFile(units.getIdMap().values());
 
         // Write planet upgrades file
-        Collection<UnitItem> planets = planetService.loadPlanetsUpgrades();
+        Collection<UnitItem> planetsItems = planetService.loadPlanetsItems();
 
-        FileTools.writePlanetUpgradesJsonFile(planets);
+        FileTools.writePlanetItemsJsonFile(planetsItems);
 
         System.out.println("Done printing all!");
     }

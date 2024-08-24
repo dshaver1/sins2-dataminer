@@ -9,7 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.dshaver.Main;
 import org.dshaver.domain.Manifest;
 import org.dshaver.domain.gamefiles.ManifestFile;
-import org.dshaver.domain.export.WikiPlanetUpgrade;
+import org.dshaver.domain.export.WikiPlanetItem;
 import org.dshaver.domain.export.WikiUnit;
 import org.dshaver.domain.gamefiles.unit.Unit;
 import org.dshaver.domain.gamefiles.unit.UnitType;
@@ -35,7 +35,7 @@ public class FileTools {
     private static final String UNIT_MANIFEST_FILE_PATH = "entities/unit.entity_manifest";
     private static final String LOCALIZED_TEXT_FILE_PATH = "localized_text/en.localized_text";
     private static final String UNIT_JSON_OUTPUT_NAME = "SoaSE2_units.json";
-    private static final String PLANET_UPGRADE_OUTPUT_NAME = "SoaSE2_planet_upgrades.json";
+    private static final String PLANET_UPGRADE_OUTPUT_NAME = "SoaSE2_planet_items.json";
     private static final ObjectMapper objectMapper;
     private static File wikiTargetDir;
 
@@ -149,8 +149,8 @@ public class FileTools {
         return String.join(" ", keyComponents);
     }
 
-    public static void writePlanetUpgradesJsonFile(Collection<UnitItem> unitItems) {
-        Map<String, WikiPlanetUpgrade> allUnitItemMap = getAllWikiPlanetUpgrades(unitItems);
+    public static void writePlanetItemsJsonFile(Collection<UnitItem> unitItems) {
+        Map<String, WikiPlanetItem> allUnitItemMap = getAllWikiPlanetUpgrades(unitItems);
         Path allUnitsJsonPath = wikiTargetDir.toPath().resolve(PLANET_UPGRADE_OUTPUT_NAME);
 
         try {
@@ -160,23 +160,23 @@ public class FileTools {
         }
     }
 
-    public static Map<String, WikiPlanetUpgrade> getAllWikiPlanetUpgrades(Collection<UnitItem> unitItems) {
+    public static Map<String, WikiPlanetItem> getAllWikiPlanetUpgrades(Collection<UnitItem> unitItems) {
         return unitItems.stream()
-                .map(WikiPlanetUpgrade::new)
+                .map(WikiPlanetItem::new)
                 .collect(Collectors.toMap(FileTools::planetUpgradeKeyMapper, Function.identity()));
     }
 
-    private static String planetUpgradeKeyMapper(WikiPlanetUpgrade wikiPlanetUpgrade) {
+    private static String planetUpgradeKeyMapper(WikiPlanetItem wikiPlanetItem) {
         List<String> keyComponents = new ArrayList<>();
-        if (wikiPlanetUpgrade.getRace() != null) {
-            keyComponents.add(wikiPlanetUpgrade.getRace());
+        if (wikiPlanetItem.getRace() != null) {
+            keyComponents.add(wikiPlanetItem.getRace());
         }
 
-        if (wikiPlanetUpgrade.getFaction() != null) {
-            keyComponents.add(wikiPlanetUpgrade.getFaction());
+        if (wikiPlanetItem.getFaction() != null) {
+            keyComponents.add(wikiPlanetItem.getFaction());
         }
 
-        keyComponents.add(wikiPlanetUpgrade.getName());
+        keyComponents.add(wikiPlanetItem.getName());
 
         return String.join(" ", keyComponents);
     }

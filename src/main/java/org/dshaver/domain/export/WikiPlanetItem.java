@@ -2,21 +2,17 @@ package org.dshaver.domain.export;
 
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
-import org.dshaver.domain.gamefiles.unit.ExoticPrice;
-import org.dshaver.domain.gamefiles.unit.Price;
-import org.dshaver.domain.gamefiles.unititem.PlanetTypeGroup;
+import org.dshaver.domain.gamefiles.unititem.EmpireModifier;
 import org.dshaver.domain.gamefiles.unititem.UnitItem;
-import org.dshaver.domain.gamefiles.unititem.UnitItemType;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.FormatProcessor.FMT;
-import static org.dshaver.domain.gamefiles.unit.Exotics.*;
 
 @Data
-public class WikiPlanetUpgrade implements Priced {
+public class WikiPlanetItem implements Priced {
     String id;
     String name;
     String description;
@@ -32,9 +28,10 @@ public class WikiPlanetUpgrade implements Priced {
     String kalanide = "";
     String quarnium = "";
     List<String> planettypes;
+    List<String> effects;
 
-    public WikiPlanetUpgrade(UnitItem unitItem) {
-        System.out.println(STR."Formatting planet upgrade \{unitItem.getId()} for wiki");
+    public WikiPlanetItem(UnitItem unitItem) {
+        System.out.println(STR."Formatting planet item \{unitItem.getId()} for wiki");
         this.id = unitItem.getId();
         this.name = unitItem.getName();
         this.description = unitItem.getDescription();
@@ -46,5 +43,12 @@ public class WikiPlanetUpgrade implements Priced {
                 .collect(Collectors.toList());
 
         setPrices(unitItem.getPrice(), unitItem.getExoticPrice());
+
+        if (unitItem.getPlayerModifiers() != null && unitItem.getPlayerModifiers().getEmpireModifiers() != null) {
+            this.effects = unitItem.getPlayerModifiers().getEmpireModifiers()
+                    .stream()
+                    .map(EmpireModifier::getEffect)
+                    .toList();
+        }
     }
 }

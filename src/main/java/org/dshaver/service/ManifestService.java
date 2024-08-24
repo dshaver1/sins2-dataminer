@@ -5,9 +5,11 @@ import com.google.common.collect.Multimap;
 import org.dshaver.domain.Manifest;
 import org.dshaver.domain.gamefiles.unit.Unit;
 import org.dshaver.domain.gamefiles.unit.UnitType;
+import org.dshaver.domain.gamefiles.unititem.EmpireModifier;
 import org.dshaver.domain.gamefiles.unititem.UnitItem;
 import org.dshaver.domain.gamefiles.unititem.UnitItemType;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -59,6 +61,14 @@ public class ManifestService {
         unitItem.setDescription(getLocalizedText().get(unitItem.getDescription()));
         unitItem.findRace();
         unitItem.findFaction();
+
+        if (unitItem.getPlayerModifiers() != null && unitItem.getPlayerModifiers().getEmpireModifiers() != null) {
+            List<EmpireModifier> modifiers = unitItem.getPlayerModifiers().getEmpireModifiers();
+            modifiers.stream().forEach(modifier -> {
+                modifier.setModifierType(localizedText.get(STR."empire_modifier.\{modifier.getModifierType()}"));
+                modifier.setEffect();
+            });
+        }
 
         return unitItem;
     }
