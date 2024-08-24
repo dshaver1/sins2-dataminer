@@ -25,9 +25,9 @@ public class Weapon {
         this.damage = weaponFile.getDamage();
         this.bombingDamage = weaponFile.getBombingDamage();
         this.penetration = weaponFile.getPenetration();
-        this.cooldownDuration = weaponFile.getCooldown_duration();
+        this.cooldownDuration = weaponFile.getCooldownDuration();
         if (weaponFile.getFiring() != null) {
-            this.travelSpeed = weaponFile.getFiring().getTravel_speed();
+            this.travelSpeed = weaponFile.getFiring().getTravelSpeed();
         }
         this.range = weaponFile.getRange();
     }

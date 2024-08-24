@@ -1,6 +1,7 @@
 package org.dshaver.domain.export;
 
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.dshaver.domain.gamefiles.unit.ExoticPrice;
 import org.dshaver.domain.gamefiles.unit.Price;
 import org.dshaver.domain.gamefiles.unititem.PlanetTypeGroup;
@@ -15,7 +16,7 @@ import static java.util.FormatProcessor.FMT;
 import static org.dshaver.domain.gamefiles.unit.Exotics.*;
 
 @Data
-public class WikiPlanetUpgrade {
+public class WikiPlanetUpgrade implements Priced {
     String id;
     String name;
     String description;
@@ -32,52 +33,18 @@ public class WikiPlanetUpgrade {
     String quarnium = "";
     List<String> planettypes;
 
-    public static WikiPlanetUpgrade fromUnitItem(UnitItem unitItem) {
+    public WikiPlanetUpgrade(UnitItem unitItem) {
         System.out.println(STR."Formatting planet upgrade \{unitItem.getId()} for wiki");
-        WikiPlanetUpgrade planetUpgrade = new WikiPlanetUpgrade();
-        planetUpgrade.id = unitItem.getId();
-        planetUpgrade.name = unitItem.getName();
-        planetUpgrade.description = unitItem.getDescription();
-        planetUpgrade.race = unitItem.getRace();
-        Optional.ofNullable(unitItem.getFaction()).ifPresent(faction -> planetUpgrade.setFaction(faction.getFactionName()));
-        planetUpgrade.buildtime = FMT."%.0f\{unitItem.getBuildTime()}";
-
-        if (unitItem.getPrice() != null) {
-            planetUpgrade.credits = FMT."%.0f\{unitItem.getPrice().getCredits()}";
-            planetUpgrade.metal = FMT."%.0f\{unitItem.getPrice().getMetal()}";
-            planetUpgrade.crystal = FMT."%.0f\{unitItem.getPrice().getCrystal()}";
-        }
-        planetUpgrade.planettypes = unitItem.getPlanetTypeGroups().stream()
-                .flatMap(group -> group.getPlanetTypes().stream())
+        this.id = unitItem.getId();
+        this.name = unitItem.getName();
+        this.description = unitItem.getDescription();
+        this.race = unitItem.getRace();
+        Optional.ofNullable(unitItem.getFaction()).ifPresent(faction -> this.setFaction(faction.getFactionName()));
+        this.buildtime = FMT."%.0f\{unitItem.getBuildTime()}";
+        this.planettypes = unitItem.getPlanetTypeGroups().stream()
+                .flatMap(group -> group.getPlanetTypes().stream().map(StringUtils::capitalize))
                 .collect(Collectors.toList());
 
-        if (unitItem.getExoticPrice() != null) {
-            unitItem.getExoticPrice().stream()
-                    .filter(exoticPrice -> economic.name().equals(exoticPrice.getExoticType()))
-                    .findAny()
-                    .ifPresent(exotic -> planetUpgrade.andvar = String.valueOf(exotic.getCount()));
-
-            unitItem.getExoticPrice().stream()
-                    .filter(exoticPrice -> offense.name().equals(exoticPrice.getExoticType()))
-                    .findAny()
-                    .ifPresent(exotic -> planetUpgrade.tauranite = String.valueOf(exotic.getCount()));
-
-            unitItem.getExoticPrice().stream()
-                    .filter(exoticPrice -> defense.name().equals(exoticPrice.getExoticType()))
-                    .findAny()
-                    .ifPresent(exotic -> planetUpgrade.indurium = String.valueOf(exotic.getCount()));
-
-            unitItem.getExoticPrice().stream()
-                    .filter(exoticPrice -> utility.name().equals(exoticPrice.getExoticType()))
-                    .findAny()
-                    .ifPresent(exotic -> planetUpgrade.kalanide = String.valueOf(exotic.getCount()));
-
-            unitItem.getExoticPrice().stream()
-                    .filter(exoticPrice -> ultimate.name().equals(exoticPrice.getExoticType()))
-                    .findAny()
-                    .ifPresent(exotic -> planetUpgrade.quarnium = String.valueOf(exotic.getCount()));
-        }
-
-        return planetUpgrade;
+        setPrices(unitItem.getPrice(), unitItem.getExoticPrice());
     }
 }

@@ -3,11 +3,13 @@ package org.dshaver.domain.export;
 import lombok.Data;
 import org.dshaver.domain.gamefiles.unit.Unit;
 
+import java.util.List;
+
 import static java.util.FormatProcessor.FMT;
 import static org.dshaver.domain.gamefiles.unit.Exotics.*;
 
 @Data
-public class WikiUnit {
+public class WikiUnit implements Priced {
     String race;
     String name;
     String type;
@@ -28,58 +30,26 @@ public class WikiUnit {
     String hull;
     String armorstr;
     String description;
+    List<String> weapons;
 
-    public static WikiUnit fromUnit(Unit unit) {
+    public WikiUnit(Unit unit) {
         System.out.println(STR."Creating WikiUnit for \{unit.getId()}");
-        WikiUnit newUnit = new WikiUnit();
-        newUnit.race = unit.getRace();
-        newUnit.name = unit.getName();
-        newUnit.type = unit.getTargetFilterUnitType();
-        newUnit.durability = FMT."%.0f\{unit.getHealth().getDurability()}";
-        newUnit.speed = FMT."%.0f\{unit.getModifiedSpeed()}";
+        this.race = unit.getRace();
+        this.name = unit.getName();
+        this.type = unit.getTargetFilterUnitType();
+        this.durability = FMT."%.0f\{unit.getHealth().getDurability()}";
+        this.speed = FMT."%.0f\{unit.getModifiedSpeed()}";
 
         if (unit.getBuild() != null) {
-            newUnit.credits = FMT."%.0f\{unit.getBuild().getPrice().getCredits()}";
-            newUnit.metal = FMT."%.0f\{unit.getBuild().getPrice().getMetal()}";
-            newUnit.crystal = FMT."%.0f\{unit.getBuild().getPrice().getCrystal()}";
-            newUnit.supply = FMT."\{unit.getBuild().getSupplyCost()}";
-            newUnit.buildtime = FMT."%.0f\{unit.getBuild().getBuildTime()}";
-
-            if (unit.getBuild().getExoticPrice() != null) {
-                unit.getBuild().getExoticPrice().stream()
-                        .filter(exoticPrice -> economic.name().equals(exoticPrice.getExoticType()))
-                        .findAny()
-                        .ifPresent(exotic -> newUnit.andvar = String.valueOf(exotic.getCount()));
-
-                unit.getBuild().getExoticPrice().stream()
-                        .filter(exoticPrice -> offense.name().equals(exoticPrice.getExoticType()))
-                        .findAny()
-                        .ifPresent(exotic -> newUnit.tauranite = String.valueOf(exotic.getCount()));
-
-                unit.getBuild().getExoticPrice().stream()
-                        .filter(exoticPrice -> defense.name().equals(exoticPrice.getExoticType()))
-                        .findAny()
-                        .ifPresent(exotic -> newUnit.indurium = String.valueOf(exotic.getCount()));
-
-                unit.getBuild().getExoticPrice().stream()
-                        .filter(exoticPrice -> utility.name().equals(exoticPrice.getExoticType()))
-                        .findAny()
-                        .ifPresent(exotic -> newUnit.kalanide = String.valueOf(exotic.getCount()));
-
-                unit.getBuild().getExoticPrice().stream()
-                        .filter(exoticPrice -> ultimate.name().equals(exoticPrice.getExoticType()))
-                        .findAny()
-                        .ifPresent(exotic -> newUnit.quarnium = String.valueOf(exotic.getCount()));
-            }
+            setPrices(unit.getBuild().getPrice(), unit.getBuild().getExoticPrice());
+            this.supply = FMT."\{unit.getBuild().getSupplyCost()}";
+            this.buildtime = FMT."%.0f\{unit.getBuild().getBuildTime()}";
         }
 
-        newUnit.shield = FMT."%.0f\{unit.getHealth().getLevels().get(0).getMaxShieldPoints()}";
-        newUnit.armor = FMT."%.0f\{unit.getHealth().getLevels().get(0).getMaxArmorPoints()}";
-        newUnit.hull = FMT."%.0f\{unit.getHealth().getLevels().get(0).getMaxHullPoints()}";
-        newUnit.armorstr = FMT."%.0f\{unit.getHealth().getLevels().get(0).getArmorStrength()}";
-        newUnit.description = unit.getDescription();
-
-
-        return newUnit;
+        this.shield = FMT."%.0f\{unit.getHealth().getLevels().get(0).getMaxShieldPoints()}";
+        this.armor = FMT."%.0f\{unit.getHealth().getLevels().get(0).getMaxArmorPoints()}";
+        this.hull = FMT."%.0f\{unit.getHealth().getLevels().get(0).getMaxHullPoints()}";
+        this.armorstr = FMT."%.0f\{unit.getHealth().getLevels().get(0).getArmorStrength()}";
+        this.description = unit.getDescription();
     }
 }

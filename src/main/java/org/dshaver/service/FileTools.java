@@ -134,7 +134,7 @@ public class FileTools {
 
     public static Map<String, WikiUnit> getAllWikiUnits(Collection<Unit> units) {
         return units.stream()
-                .map(WikiUnit::fromUnit)
+                .map(WikiUnit::new)
                 .collect(Collectors.toMap(FileTools::unitKeyMapper, Function.identity()));
     }
 
@@ -162,7 +162,7 @@ public class FileTools {
 
     public static Map<String, WikiPlanetUpgrade> getAllWikiPlanetUpgrades(Collection<UnitItem> unitItems) {
         return unitItems.stream()
-                .map(WikiPlanetUpgrade::fromUnitItem)
+                .map(WikiPlanetUpgrade::new)
                 .collect(Collectors.toMap(FileTools::planetUpgradeKeyMapper, Function.identity()));
     }
 

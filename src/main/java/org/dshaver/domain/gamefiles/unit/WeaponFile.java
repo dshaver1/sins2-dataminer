@@ -7,7 +7,7 @@ public class WeaponFile {
     String name;
     String weaponType;
     double range;
-    double cooldown_duration;
+    double cooldownDuration;
     double damage;
     double bombingDamage;
     double penetration;
@@ -15,8 +15,8 @@ public class WeaponFile {
 
     @Data
     public static class Firing {
-        String firing_type;
-        double travel_speed;
-        double charge_duration;
+        String firingType;
+        double travelSpeed;
+        double chargeDuration;
     }
 }
