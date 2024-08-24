@@ -2,6 +2,11 @@ package org.dshaver.domain.gamefiles.unit;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+
+import java.util.stream.Collectors;
+
+import static java.util.FormatProcessor.FMT;
+
 @JsonIgnoreProperties
 @Data
 public class Weapon {

@@ -2,6 +2,7 @@ package org.dshaver.domain.export;
 
 import lombok.Data;
 import org.dshaver.domain.gamefiles.unit.Unit;
+import org.dshaver.domain.gamefiles.unit.Weapon;
 
 import java.util.List;
 
@@ -30,7 +31,7 @@ public class WikiUnit implements Priced {
     String hull;
     String armorstr;
     String description;
-    List<String> weapons;
+    List<WikiWeapon> weapons;
 
     public WikiUnit(Unit unit) {
         System.out.println(STR."Creating WikiUnit for \{unit.getId()}");
@@ -51,5 +52,11 @@ public class WikiUnit implements Priced {
         this.hull = FMT."%.0f\{unit.getHealth().getLevels().get(0).getMaxHullPoints()}";
         this.armorstr = FMT."%.0f\{unit.getHealth().getLevels().get(0).getArmorStrength()}";
         this.description = unit.getDescription();
+
+        if (unit.getWeapons() != null) {
+            this.weapons = unit.getWeapons().getWeapons().stream()
+                    .map(WikiWeapon::new)
+                    .toList();
+        }
     }
 }
