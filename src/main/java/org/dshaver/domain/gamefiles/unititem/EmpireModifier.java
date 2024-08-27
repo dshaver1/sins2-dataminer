@@ -19,10 +19,11 @@ public class EmpireModifier {
         if (additive.equals(valueBehavior)) {
             setEffect(STR."\{getModifierType()} \{getValueBehavior().getOperation()}\{getValue()}");
         } else if (scalar.equals(valueBehavior)) {
+            String percentValue = Double.toString(value * 100);
             if (getValue() > 0) {
-                setEffect(STR."\{getModifierType()} +\{getValue()}\{getValueBehavior().getOperation()}");
+                setEffect(STR."\{getModifierType()} +\{percentValue}\{getValueBehavior().getOperation()}");
             } else {
-                setEffect(STR."\{getModifierType()} \{getValue()}\{getValueBehavior().getOperation()}");
+                setEffect(STR."\{getModifierType()} \{percentValue}\{getValueBehavior().getOperation()}");
             }
         }
     }

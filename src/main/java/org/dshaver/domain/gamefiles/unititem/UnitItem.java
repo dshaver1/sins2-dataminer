@@ -22,6 +22,8 @@ public class UnitItem {
     List<ExoticPrice> exoticPrice;
     List<PlanetTypeGroup> planetTypeGroups;
     PlayerModifier playerModifiers;
+    List<PlanetModifier> planetModifiers;
+    String ability;
 
     public void findRace() {
         if (id.contains(ADVENT_ID_PREFIX)) {

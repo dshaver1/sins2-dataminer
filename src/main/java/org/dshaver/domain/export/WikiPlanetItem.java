@@ -3,6 +3,7 @@ package org.dshaver.domain.export;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.dshaver.domain.gamefiles.unititem.EmpireModifier;
+import org.dshaver.domain.gamefiles.unititem.PlanetModifier;
 import org.dshaver.domain.gamefiles.unititem.UnitItem;
 
 import java.util.List;
@@ -28,7 +29,9 @@ public class WikiPlanetItem implements Priced {
     String kalanide = "";
     String quarnium = "";
     List<String> planettypes;
-    List<String> effects;
+    List<String> empireeffects;
+    List<String> planeteffects;
+    String ability;
 
     public WikiPlanetItem(UnitItem unitItem) {
         System.out.println(STR."Formatting planet item \{unitItem.getId()} for wiki");
@@ -45,10 +48,18 @@ public class WikiPlanetItem implements Priced {
         setPrices(unitItem.getPrice(), unitItem.getExoticPrice());
 
         if (unitItem.getPlayerModifiers() != null && unitItem.getPlayerModifiers().getEmpireModifiers() != null) {
-            this.effects = unitItem.getPlayerModifiers().getEmpireModifiers()
+            this.empireeffects = unitItem.getPlayerModifiers().getEmpireModifiers()
                     .stream()
                     .map(EmpireModifier::getEffect)
                     .toList();
         }
+
+        if (unitItem.getPlanetModifiers() != null) {
+            this.planeteffects = unitItem.getPlanetModifiers().stream()
+                    .map(PlanetModifier::getEffect)
+                    .toList();
+        }
+
+        this.ability = unitItem.getAbility();
     }
 }

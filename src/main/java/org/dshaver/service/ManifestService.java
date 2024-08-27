@@ -70,6 +70,15 @@ public class ManifestService {
             });
         }
 
+        if (unitItem.getPlanetModifiers() != null) {
+            unitItem.getPlanetModifiers().forEach(modifier -> {
+                modifier.setName(localizedText.get(STR."planet_modifier.\{modifier.getModifierType()}"));
+                modifier.setEffect();
+            });
+        }
+
+        unitItem.setAbility(localizedText.get(STR."\{unitItem.getAbility()}_unit_item_name"));
+
         return unitItem;
     }
 }
