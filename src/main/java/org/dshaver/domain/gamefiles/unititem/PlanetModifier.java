@@ -42,14 +42,15 @@ public class PlanetModifier {
 
                     return sb.toString();
                 })
-                .collect(Collectors.joining("/"));
+                .collect(Collectors.joining(" → "));
 
         setEffect(STR."\{getName()} \{value}");
 
     }
 
-    //mining_track_metal_income_rate -> planet_modifier.metal_extraction_rate
-    //mining_track_crystal_income_rate -> planet_modifier.crystal_extraction_rate
+    // why? The ids for these 2 don't actually match with the localized text.
+    // mining_track_metal_income_rate -> planet_modifier.metal_extraction_rate
+    // mining_track_crystal_income_rate -> planet_modifier.crystal_extraction_rate
     public String getModifierType() {
         if (MINING_TRACK_METAL_INCOME_RATE.equals(this.modifierType)) {
             return METAL_EXTRACTION_RATE;

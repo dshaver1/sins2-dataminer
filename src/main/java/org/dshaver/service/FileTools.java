@@ -11,6 +11,7 @@ import org.dshaver.domain.Manifest;
 import org.dshaver.domain.gamefiles.ManifestFile;
 import org.dshaver.domain.export.WikiPlanetItem;
 import org.dshaver.domain.export.WikiUnit;
+import org.dshaver.domain.gamefiles.research.ResearchSubject;
 import org.dshaver.domain.gamefiles.unit.Unit;
 import org.dshaver.domain.gamefiles.unit.UnitType;
 import org.dshaver.domain.gamefiles.unititem.UnitItem;
@@ -32,6 +33,7 @@ public class FileTools {
 
     private static final String ENTITY_DIR = "entities";
     private static final String UNIT_ITEM_MANIFEST_FILE_PATH = "entities/unit_item.entity_manifest";
+    private static final String RESEARCH_SUBJECT_MANIFEST_FILE_PATH = "entities/research_subject.entity_manifest";
     private static final String UNIT_MANIFEST_FILE_PATH = "entities/unit.entity_manifest";
     private static final String LOCALIZED_TEXT_FILE_PATH = "localized_text/en.localized_text";
     private static final String UNIT_JSON_OUTPUT_NAME = "SoaSE2_units.json";
@@ -121,6 +123,21 @@ public class FileTools {
         }
     }
 
+    public static ResearchSubject readResearchSubjectFile(String steamDir, String researchSubjectId) {
+        var path = getEntityPath(steamDir, STR."\{researchSubjectId}.research_subject");
+        System.out.println(STR."Reading research_subject file \{path}");
+
+        try (InputStream is = Files.newInputStream(path)) {
+            ResearchSubject researchSubject = objectMapper.readValue(is, ResearchSubject.class);
+
+            researchSubject.setId(researchSubjectId);
+
+            return researchSubject;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void writeUnitsJsonFile(Collection<Unit> units) {
         Map<String, WikiUnit> allUnitMap = getAllWikiUnits(units);
         Path allUnitsJsonPath = wikiTargetDir.toPath().resolve(UNIT_JSON_OUTPUT_NAME);
@@ -187,6 +204,21 @@ public class FileTools {
 
     public static Path getPath(String steamDir, String filePart) {
         return Path.of(steamDir).resolve(filePart);
+    }
+
+    public static Manifest<String, ResearchSubject> loadResearchSubjectManifest(String steamDir) {
+        System.out.println("Reading research subject manifest");
+        Path path = getPath(steamDir, RESEARCH_SUBJECT_MANIFEST_FILE_PATH);
+
+        try (InputStream is = Files.newInputStream(path)) {
+            ManifestFile manifestFile = objectMapper.readValue(is, ManifestFile.class);
+            Manifest<String, ResearchSubject> manifest = new Manifest<>();
+            manifest.setIds(manifestFile.getIds());
+
+            return manifest;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static Manifest<UnitItemType, UnitItem> loadUnitItemManifest(String steamDir) {

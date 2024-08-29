@@ -18,7 +18,8 @@ public enum UnitType {
     phase_lane(false),
     gravity_well(false),
     buff_agent(false),
-    debris(false);
+    debris(false),
+    untargetable(false);
 
     private final boolean ship;
 

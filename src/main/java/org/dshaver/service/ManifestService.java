@@ -2,20 +2,19 @@ package org.dshaver.service;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import org.apache.commons.lang3.StringUtils;
 import org.dshaver.domain.Manifest;
-import org.dshaver.domain.gamefiles.unit.Unit;
-import org.dshaver.domain.gamefiles.unit.UnitType;
+import org.dshaver.domain.gamefiles.research.ResearchSubject;
 import org.dshaver.domain.gamefiles.unititem.EmpireModifier;
 import org.dshaver.domain.gamefiles.unititem.UnitItem;
 import org.dshaver.domain.gamefiles.unititem.UnitItemType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static org.dshaver.service.UnitService.getDescriptionProperty;
-import static org.dshaver.service.UnitService.getNameProperty;
 
 public class ManifestService {
 
@@ -40,10 +39,13 @@ public class ManifestService {
 
         System.out.println(STR."Loaded \{unitItemManifest.getIds().size()} unitItemIds");
 
+        // TODO Actually hook this up to grab tier!
+        Manifest<String, ResearchSubject> researchSubjectManifest = loadResearchSubjectManifest();
+
         // Organize by id
         Map<String, UnitItem> unitItemMap = unitItemManifest.getIds().stream()
                 .map(id -> FileTools.readUnitItemFile(steamDir, id))
-                .map(this::populateUnitItem)
+                .map(item -> populateUnitItem(item, researchSubjectManifest))
                 .collect(Collectors.toMap(UnitItem::getId, Function.identity()));
 
         unitItemManifest.setIdMap(unitItemMap);
@@ -56,7 +58,7 @@ public class ManifestService {
         return unitItemManifest;
     }
 
-    private UnitItem populateUnitItem(UnitItem unitItem) {
+    private UnitItem populateUnitItem(UnitItem unitItem, Manifest<String, ResearchSubject> researchManifest) {
         unitItem.setName(getLocalizedText().get(unitItem.getName()));
         unitItem.setDescription(getLocalizedText().get(unitItem.getDescription()));
         unitItem.findRace();
@@ -77,8 +79,55 @@ public class ManifestService {
             });
         }
 
-        unitItem.setAbility(localizedText.get(STR."\{unitItem.getAbility()}_unit_item_name"));
+        // Set Ability name
+        // localized_text keys are inconsistent!
+        Optional<String> abilityName = Optional.ofNullable(localizedText.get(STR."\{unitItem.getAbility()}_unit_item_name"))
+                .or(() -> Optional.ofNullable(localizedText.get(STR."\{unitItem.getAbility()}_name")));
+
+        if (StringUtils.isNotBlank(unitItem.getAbility()) && abilityName.isEmpty()) {
+            System.out.println("Could not find ability name for " + unitItem.getAbility());
+        }
+
+        abilityName.ifPresent(unitItem::setAbility);
+
+        // Set prerequisites
+        if (!unitItem.getPrerequisitesIds().isEmpty()) {
+            unitItem.setPrerequisites(unitItem.getPrerequisitesIds().stream().map(s -> localizedText.get(STR."\{s}_research_subject_name")).collect(Collectors.toList()));
+            int maxPrereqTier = unitItem.getPrerequisitesIds().stream()
+                    .map(prereq -> researchManifest.getIdMap().get(prereq))
+                    .mapToInt(ResearchSubject::getTier)
+                    .max().orElse(0);
+
+            String domain = unitItem.getPrerequisitesIds().stream()
+                    .map(prereq -> researchManifest.getIdMap().get(prereq))
+                    .map(ResearchSubject::getDomain)
+                    .findFirst()
+                    .orElse("");
+
+            unitItem.setPrerequisiteTier(maxPrereqTier);
+            unitItem.setPrerequisiteDomain(domain);
+        }
 
         return unitItem;
+    }
+
+    public Manifest<String, ResearchSubject> loadResearchSubjectManifest() {
+        Manifest<String, ResearchSubject> manifest = FileTools.loadResearchSubjectManifest(steamDir);
+
+        System.out.println(STR."Loaded \{manifest.getIds().size()} research subject ids");
+
+        // Organize by id
+        Map<String, ResearchSubject> researchSubjectMap = manifest.getIds().stream()
+                .map(id -> FileTools.readResearchSubjectFile(steamDir, id))
+                .collect(Collectors.toMap(ResearchSubject::getId, Function.identity()));
+
+        manifest.setIdMap(researchSubjectMap);
+
+        // Organize by domain
+        Multimap<String, ResearchSubject> typeIndex = ArrayListMultimap.create();
+        researchSubjectMap.values().forEach(researchSubject -> typeIndex.put(researchSubject.getDomain(), researchSubject));
+        manifest.setTypeIndex(typeIndex);
+
+        return manifest;
     }
 }

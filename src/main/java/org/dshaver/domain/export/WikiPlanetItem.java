@@ -32,6 +32,8 @@ public class WikiPlanetItem implements Priced {
     List<String> empireeffects;
     List<String> planeteffects;
     String ability;
+    String prerequisites;
+    String tier;
 
     public WikiPlanetItem(UnitItem unitItem) {
         System.out.println(STR."Formatting planet item \{unitItem.getId()} for wiki");
@@ -61,5 +63,10 @@ public class WikiPlanetItem implements Priced {
         }
 
         this.ability = unitItem.getAbility();
+
+        if (unitItem.getPrerequisites() != null && !unitItem.getPrerequisites().isEmpty()) {
+            this.prerequisites = String.join(",", unitItem.getPrerequisites());
+            this.tier = STR."\{StringUtils.capitalize(unitItem.getPrerequisiteDomain())} Tier \{Integer.toString(unitItem.getPrerequisiteTier())}";
+        }
     }
 }
