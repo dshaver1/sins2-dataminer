@@ -2,6 +2,7 @@ package org.dshaver.domain.export;
 
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+import org.dshaver.RomanNumeral;
 import org.dshaver.domain.gamefiles.unititem.EmpireModifier;
 import org.dshaver.domain.gamefiles.unititem.PlanetModifier;
 import org.dshaver.domain.gamefiles.unititem.UnitItem;
@@ -66,7 +67,8 @@ public class WikiPlanetItem implements Priced {
 
         if (unitItem.getPrerequisites() != null && !unitItem.getPrerequisites().isEmpty()) {
             this.prerequisites = String.join(",", unitItem.getPrerequisites());
-            this.tier = STR."\{StringUtils.capitalize(unitItem.getPrerequisiteDomain())} Tier \{Integer.toString(unitItem.getPrerequisiteTier())}";
+            String romanTier = RomanNumeral.toRoman(unitItem.getPrerequisiteTier() + 1);
+            this.tier = STR."\{StringUtils.capitalize(unitItem.getPrerequisiteDomain())} \{romanTier}";
         }
     }
 }
