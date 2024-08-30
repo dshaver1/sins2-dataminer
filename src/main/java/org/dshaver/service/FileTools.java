@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.type.MapType;
 import org.apache.commons.lang3.StringUtils;
 import org.dshaver.Main;
 import org.dshaver.domain.Manifest;
+import org.dshaver.domain.export.WikiStructure;
 import org.dshaver.domain.gamefiles.ManifestFile;
 import org.dshaver.domain.export.WikiPlanetItem;
 import org.dshaver.domain.export.WikiUnit;
@@ -37,6 +38,7 @@ public class FileTools {
     private static final String UNIT_MANIFEST_FILE_PATH = "entities/unit.entity_manifest";
     private static final String LOCALIZED_TEXT_FILE_PATH = "localized_text/en.localized_text";
     private static final String UNIT_JSON_OUTPUT_NAME = "SoaSE2_units.json";
+    private static final String STRUCTURE_JSON_OUTPUT_NAME = "SoaSE2_structures.json";
     private static final String PLANET_UPGRADE_OUTPUT_NAME = "SoaSE2_planet_items.json";
     private static final ObjectMapper objectMapper;
     private static File wikiTargetDir;
@@ -97,6 +99,7 @@ public class FileTools {
             Unit unit = objectMapper.readValue(is, Unit.class);
             unit.setId(unitId);
             unit.findRace();
+            unit.findFaction();
 
             if (StringUtils.isNotBlank(unit.getTargetFilterUnitType())) {
                 unit.setUnitType(UnitType.valueOf(unit.getTargetFilterUnitType()));
@@ -149,10 +152,46 @@ public class FileTools {
         }
     }
 
+    public static void writeStructuresJsonFile(Collection<Unit> structures) {
+        Map<String, WikiStructure> allStructuresMap = getAllWikiStructures(structures);
+        Path allUnitsJsonPath = wikiTargetDir.toPath().resolve(STRUCTURE_JSON_OUTPUT_NAME);
+
+        try {
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(allUnitsJsonPath.toFile(), allStructuresMap);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static Map<String, WikiUnit> getAllWikiUnits(Collection<Unit> units) {
         return units.stream()
+                .filter(unit -> unit.getUnitType().isShip())
                 .map(WikiUnit::new)
                 .collect(Collectors.toMap(FileTools::unitKeyMapper, Function.identity()));
+    }
+
+
+    public static Map<String, WikiStructure> getAllWikiStructures(Collection<Unit> units) {
+        return units.stream()
+                .filter(unit -> unit.getUnitType().isBuilding())
+                .map(WikiStructure::new)
+                .collect(Collectors.toMap(FileTools::structureKeyMapper, Function.identity()));
+    }
+
+    private static String structureKeyMapper(WikiStructure wikiStructure) {
+        List<String> keyComponents = new ArrayList<>();
+
+        if (StringUtils.isNotBlank(wikiStructure.getRace())) {
+            keyComponents.add(wikiStructure.getRace());
+        }
+
+        if (StringUtils.isNotBlank(wikiStructure.getFaction())) {
+            keyComponents.add(wikiStructure.getFaction());
+        }
+
+        keyComponents.add(wikiStructure.getName());
+
+        return String.join(" ", keyComponents);
     }
 
     private static String unitKeyMapper(WikiUnit wikiUnit) {

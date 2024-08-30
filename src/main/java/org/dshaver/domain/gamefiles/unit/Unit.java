@@ -2,6 +2,8 @@ package org.dshaver.domain.gamefiles.unit;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+import org.dshaver.domain.gamefiles.structure.Structure;
+import org.dshaver.domain.gamefiles.unititem.Faction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +26,7 @@ public class Unit {
     String name;
     String description;
     String race;
+    Faction faction;
     String targetFilterUnitType;
     UnitType unitType;
 
@@ -31,8 +34,29 @@ public class Unit {
     Physics physics;
     Health health;
     Build build;
-    public double getModifiedSpeed() {
-        return physics.getMaxLinearSpeed();
+    Structure structure;
+    public Double getModifiedSpeed() {
+        if (physics != null) {
+            return physics.getMaxLinearSpeed();
+        }
+
+        return null;
+    }
+
+    public void findFaction() {
+        if (id.contains(Faction.advent_loyalist.name())) {
+            this.faction = Faction.advent_loyalist;
+        } else if (id.contains(Faction.advent_rebel.name())) {
+            this.faction = Faction.advent_rebel;
+        } else if (id.contains(Faction.trader_loyalist.name())) {
+            this.faction = Faction.trader_loyalist;
+        } else if (id.contains(Faction.trader_rebel.name())) {
+            this.faction = Faction.trader_rebel;
+        } else if (id.contains(Faction.vasari_alliance.name())) {
+            this.faction = Faction.vasari_alliance;
+        } else if (id.contains(Faction.vasari_exodus.name())) {
+            this.faction = Faction.vasari_exodus;
+        }
     }
 
     public void findRace() {

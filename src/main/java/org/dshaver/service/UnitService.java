@@ -31,7 +31,7 @@ public class UnitService {
         Map<String, Unit> unitIdMap = unitManifest.getIds().stream()
                 .map(id -> FileTools.readUnitFile(steamDir, id))
                 .filter(unit -> StringUtils.isNotBlank(unit.getTargetFilterUnitType()))
-                .filter(unit -> unit.getUnitType().isShip())
+                .filter(unit -> unit.getUnitType().isShip() || unit.getUnitType().isBuilding())
                 .map(this::populateUnit)
                 .collect(Collectors.toMap(Unit::getId, Function.identity()));
 

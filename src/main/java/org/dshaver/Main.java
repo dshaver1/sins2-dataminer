@@ -29,6 +29,9 @@ public class Main {
 
         FileTools.writeUnitsJsonFile(units.getIdMap().values());
 
+        // Write structures file
+        FileTools.writeStructuresJsonFile(units.getIdMap().values());
+
         // Write planet upgrades file
         Collection<UnitItem> planetsItems = planetService.loadPlanetItems();
 

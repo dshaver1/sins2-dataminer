@@ -1,20 +1,18 @@
 package org.dshaver.domain.export;
 
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 import org.dshaver.domain.gamefiles.unit.Unit;
-import org.dshaver.domain.gamefiles.unit.Weapon;
 
 import java.util.List;
 
 import static java.util.FormatProcessor.FMT;
-import static org.dshaver.domain.gamefiles.unit.Exotics.*;
 
 @Data
-public class WikiUnit implements Priced {
+public class WikiStructure implements Priced {
     String race;
     String faction;
     String name;
-    String type;
     String credits;
     String metal;
     String crystal;
@@ -24,8 +22,6 @@ public class WikiUnit implements Priced {
     String kalanide = "";
     String quarnium = "";
     String buildtime;
-    String supply;
-    String speed;
     String durability;
     String shield;
     String armor;
@@ -33,21 +29,20 @@ public class WikiUnit implements Priced {
     String armorstr;
     String description;
     List<WikiWeapon> weapons;
+    String civilianslots;
+    String militaryslots;
 
-    public WikiUnit(Unit unit) {
-        System.out.println(STR."Creating WikiUnit for \{unit.getId()}");
+    public WikiStructure(Unit unit) {
+        System.out.println(STR."Creating WikiStructure for \{unit.getId()}");
         this.race = unit.getRace();
         if (unit.getFaction() != null) {
             this.faction = unit.getFaction().getFactionName();
         }
         this.name = unit.getName();
-        this.type = unit.getTargetFilterUnitType();
         this.durability = FMT."%.0f\{unit.getHealth().getDurability()}";
-        this.speed = FMT."%.0f\{unit.getModifiedSpeed()}";
 
         if (unit.getBuild() != null) {
             setPrices(unit.getBuild().getPrice(), unit.getBuild().getExoticPrice());
-            this.supply = FMT."\{unit.getBuild().getSupplyCost()}";
             this.buildtime = FMT."%.0f\{unit.getBuild().getBuildTime()}";
         }
 
@@ -61,6 +56,13 @@ public class WikiUnit implements Priced {
             this.weapons = unit.getWeapons().getWeapons().stream()
                     .map(WikiWeapon::new)
                     .toList();
+        }
+
+        if (unit.getStructure() != null && unit.getStructure().getSlotType() != null) {
+            switch (unit.getStructure().getSlotType()) {
+                case military -> this.militaryslots = Integer.toString(unit.getStructure().getSlotsRequired());
+                case civilian -> this.civilianslots = Integer.toString(unit.getStructure().getSlotsRequired());
+            }
         }
     }
 }
