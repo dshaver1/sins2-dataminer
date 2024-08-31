@@ -53,8 +53,12 @@ public class FileTools {
         return objectMapper;
     }
 
-    private static Path makeTargetDir(String outputDir) {
-        Path targetDir = Paths.get("").resolve(outputDir);
+    public static Path getTargetDir(String relativeOutputDir) {
+        return Paths.get("").resolve(relativeOutputDir);
+    }
+
+    public static Path makeTargetDir(String outputDir) {
+        Path targetDir = getTargetDir(outputDir);
         targetDir.toFile().mkdirs();
 
         return targetDir;

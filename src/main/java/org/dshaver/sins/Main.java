@@ -22,6 +22,25 @@ public class Main {
     public static String outputDir;
 
     public static void main(String[] args) {
+        CommandLine cmd = readArgs(args);
+
+        steamDir = Optional.ofNullable(cmd.getOptionValue("steamdir")).orElse(DEFAULT_STEAM_DIR);
+        outputDir = Optional.ofNullable(cmd.getOptionValue("output")).orElse(DEFAULT_OUTPUT_DIR);
+
+        if (!FileTools.validSteamDir(steamDir)) {
+            System.out.println("Invalid steamdir!");
+            System.exit(1);
+        }
+
+        System.out.println(STR."Starting with steamdir \{steamDir} and outputdir \{outputDir}");
+
+        unitService = new UnitService(new GameFileService(steamDir), steamDir);
+        planetService = new PlanetService(new ManifestService(steamDir));
+
+        loadFilesAndExport();
+    }
+
+    private static CommandLine readArgs(String[] args) {
         Options options = new Options();
 
         Option steamdirOption = new Option("sd", "steamdir", true, "Path to Sins2 folder. Default: \"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Sins2\\\"");
@@ -45,20 +64,7 @@ public class Main {
             System.exit(1);
         }
 
-        steamDir = Optional.ofNullable(cmd.getOptionValue("steamdir")).orElse(DEFAULT_STEAM_DIR);
-        outputDir = Optional.ofNullable(cmd.getOptionValue("output")).orElse(DEFAULT_OUTPUT_DIR);
-
-        if (!FileTools.validSteamDir(steamDir)) {
-            System.out.println("Invalid steamdir!");
-            System.exit(1);
-        }
-
-        System.out.println(STR."Starting with steamdir \{steamDir} and outputdir \{outputDir}");
-
-        unitService = new UnitService(new GameFileService(steamDir), steamDir);
-        planetService = new PlanetService(new ManifestService(steamDir));
-
-        loadFilesAndExport();
+        return cmd;
     }
 
     public static void loadFilesAndExport() {
@@ -75,6 +81,6 @@ public class Main {
 
         FileTools.writePlanetItemsJsonFile(outputDir, planetsItems);
 
-        System.out.println("Done printing all!");
+        System.out.println(STR."Done writing all files to \{FileTools.getTargetDir(outputDir).toAbsolutePath()}!");
     }
 }
