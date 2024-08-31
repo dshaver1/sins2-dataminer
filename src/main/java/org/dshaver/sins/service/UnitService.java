@@ -69,11 +69,7 @@ public class UnitService {
         Map<String, WeaponFile> weaponMap = new HashMap<>();
 
         for (String weaponId : weaponIds) {
-            try (InputStream weaponInput = Unit.class.getResourceAsStream("/steamdir/entities/" + weaponId + ".weapon")) {
-                weaponMap.put(weaponId, FileTools.getObjectMapper().readValue(weaponInput, WeaponFile.class));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            weaponMap.put(weaponId, FileTools.readWeaponFile(steamDir, weaponId));
         }
 
         unit.getWeapons().getWeapons().forEach(weapon -> {

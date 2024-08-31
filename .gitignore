@@ -37,7 +37,5 @@ build/
 ### Mac OS ###
 .DS_Store
 
-src/main/resources/steamdir/entities/
-src/main/resources/steamdir/localized_text/
-src/main/resources/steamdir/uniforms/
-src/main/resources/steamdir/gui/
+src/main/external-resources/
+wiki/

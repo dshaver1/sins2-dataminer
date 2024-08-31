@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.type.MapType;
 import org.apache.commons.lang3.StringUtils;
-import org.dshaver.sins.Main;
 import org.dshaver.sins.domain.Manifest;
 import org.dshaver.sins.domain.export.WikiPlanetItem;
 import org.dshaver.sins.domain.export.WikiStructure;
@@ -15,15 +14,16 @@ import org.dshaver.sins.domain.ingest.ManifestFile;
 import org.dshaver.sins.domain.ingest.research.ResearchSubject;
 import org.dshaver.sins.domain.ingest.unit.Unit;
 import org.dshaver.sins.domain.ingest.unit.UnitType;
+import org.dshaver.sins.domain.ingest.unit.WeaponFile;
 import org.dshaver.sins.domain.ingest.unititem.UnitItem;
 import org.dshaver.sins.domain.ingest.unititem.UnitItemType;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -41,14 +41,8 @@ public class FileTools {
     private static final String STRUCTURE_JSON_OUTPUT_NAME = "SoaSE2_structures.json";
     private static final String PLANET_UPGRADE_OUTPUT_NAME = "SoaSE2_planet_items.json";
     private static final ObjectMapper objectMapper;
-    private static File wikiTargetDir;
 
     static {
-        String path = Main.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-        String wikiPath = path.substring(1) + "wiki";
-        wikiTargetDir = new File(wikiPath);
-        wikiTargetDir.mkdirs();
-
         objectMapper = new ObjectMapper();
         objectMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -59,8 +53,11 @@ public class FileTools {
         return objectMapper;
     }
 
-    public static File getWikiTargetDir() {
-        return wikiTargetDir;
+    private static Path makeTargetDir(String outputDir) {
+        Path targetDir = Paths.get("").resolve(outputDir);
+        targetDir.toFile().mkdirs();
+
+        return targetDir;
     }
 
     /**
@@ -68,15 +65,25 @@ public class FileTools {
      * json and have the wiki read the json via lua module.
      */
     @Deprecated
-    public static void writeInitialWikiFiles(List<Unit> units) {
+    public static void writeInitialWikiFiles(String outputDir, List<Unit> units) {
+        Path targetDir = makeTargetDir(outputDir);
         units.forEach(unit -> {
             try {
-                Path unitPath = wikiTargetDir.toPath().resolve(unit.getId() + ".txt");
+                Path unitPath = targetDir.resolve(unit.getId() + ".txt");
                 writeStringToFile(Files.createFile(unitPath).toFile(), unit.toString(), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    public static boolean validSteamDir(String steamDir) {
+        Path path = getPath(steamDir, LOCALIZED_TEXT_FILE_PATH);
+        boolean exists = path.toFile().exists();
+
+        System.out.println(STR."Could not find file \{path}!");
+
+        return exists;
     }
 
     public static Map<String, String> readLocalizedTextFile(String steamDir) {
@@ -106,6 +113,19 @@ public class FileTools {
             }
 
             return unit;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static WeaponFile readWeaponFile(String steamDir, String weaponId) {
+        var weaponPath = getEntityPath(steamDir, STR."\{weaponId}.weapon");
+        System.out.println(STR."Reading weapon file \{weaponId}");
+
+        try (InputStream is = Files.newInputStream(weaponPath)) {
+            WeaponFile weaponFile = FileTools.getObjectMapper().readValue(is, WeaponFile.class);
+
+            return weaponFile;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -141,9 +161,11 @@ public class FileTools {
         }
     }
 
-    public static void writeUnitsJsonFile(Collection<Unit> units) {
+    public static void writeUnitsJsonFile(String outputDir, Collection<Unit> units) {
+        Path targetDir = makeTargetDir(outputDir);
+
         Map<String, WikiUnit> allUnitMap = getAllWikiUnits(units);
-        Path allUnitsJsonPath = wikiTargetDir.toPath().resolve(UNIT_JSON_OUTPUT_NAME);
+        Path allUnitsJsonPath = targetDir.resolve(UNIT_JSON_OUTPUT_NAME);
 
         try {
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(allUnitsJsonPath.toFile(), allUnitMap);
@@ -152,9 +174,11 @@ public class FileTools {
         }
     }
 
-    public static void writeStructuresJsonFile(Collection<Unit> structures) {
+    public static void writeStructuresJsonFile(String outputDir, Collection<Unit> structures) {
+        Path targetDir = makeTargetDir(outputDir);
+
         Map<String, WikiStructure> allStructuresMap = getAllWikiStructures(structures);
-        Path allUnitsJsonPath = wikiTargetDir.toPath().resolve(STRUCTURE_JSON_OUTPUT_NAME);
+        Path allUnitsJsonPath = targetDir.resolve(STRUCTURE_JSON_OUTPUT_NAME);
 
         try {
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(allUnitsJsonPath.toFile(), allStructuresMap);
@@ -205,9 +229,11 @@ public class FileTools {
         return String.join(" ", keyComponents);
     }
 
-    public static void writePlanetItemsJsonFile(Collection<UnitItem> unitItems) {
+    public static void writePlanetItemsJsonFile(String outputDir, Collection<UnitItem> unitItems) {
+        Path targetDir = makeTargetDir(outputDir);
+
         Map<String, WikiPlanetItem> allUnitItemMap = getAllWikiPlanetUpgrades(unitItems);
-        Path allUnitsJsonPath = wikiTargetDir.toPath().resolve(PLANET_UPGRADE_OUTPUT_NAME);
+        Path allUnitsJsonPath = targetDir.resolve(PLANET_UPGRADE_OUTPUT_NAME);
 
         try {
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(allUnitsJsonPath.toFile(), allUnitItemMap);
