@@ -6,7 +6,7 @@
 
     <groupId>org.dshaver</groupId>
     <artifactId>sins2-dataminer</artifactId>
-    <version>0.1</version>
+    <version>0.2-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
