@@ -2,24 +2,37 @@ package org.dshaver.sins;
 
 import org.apache.commons.cli.*;
 import org.dshaver.sins.domain.Manifest;
+import org.dshaver.sins.domain.ingest.player.Player;
+import org.dshaver.sins.domain.ingest.player.PlayerType;
 import org.dshaver.sins.domain.ingest.unit.Unit;
 import org.dshaver.sins.domain.ingest.unit.UnitType;
 import org.dshaver.sins.domain.ingest.unititem.UnitItem;
 import org.dshaver.sins.service.*;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.Optional;
 
 public class Main {
+    /**
+     * Defaults
+     */
     private static final String DEFAULT_STEAM_DIR = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Sins2\\";
     private static final String DEFAULT_OUTPUT_DIR = "wiki\\";
 
-    public static UnitService unitService;
-    public static PlanetService planetService;
-
+    /**
+     * Input options
+     */
     public static String steamDir;
     public static String outputDir;
+
+    /**
+     * Services
+     */
+    public static GameFileService gameFileService;
+    public static ManifestService manifestService;
+    public static UnitService unitService;
+    public static PlanetService planetService;
+    public static PlayerService playerService;
 
     public static void main(String[] args) {
         CommandLine cmd = readArgs(args);
@@ -34,10 +47,17 @@ public class Main {
 
         System.out.println(STR."Starting with steamdir \{steamDir} and outputdir \{outputDir}");
 
-        unitService = new UnitService(new GameFileService(steamDir), steamDir);
-        planetService = new PlanetService(new ManifestService(steamDir));
+        buildServices();
 
         loadFilesAndExport();
+    }
+
+    private static void buildServices() {
+        gameFileService = new GameFileService(steamDir, outputDir);
+        manifestService = new ManifestService(gameFileService);
+        unitService = new UnitService(gameFileService, steamDir);
+        planetService = new PlanetService(manifestService);
+        playerService = new PlayerService(gameFileService, manifestService);
     }
 
     private static CommandLine readArgs(String[] args) {
@@ -68,6 +88,9 @@ public class Main {
     }
 
     public static void loadFilesAndExport() {
+        // Read player files as a starting point
+        Manifest<PlayerType, Player> playerManifest = playerService.getPlayerManifest();
+
         // Write units file
         Manifest<UnitType, Unit> units = unitService.loadUnitManifest();
 

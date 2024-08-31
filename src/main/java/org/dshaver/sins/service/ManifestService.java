@@ -4,6 +4,8 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.apache.commons.lang3.StringUtils;
 import org.dshaver.sins.domain.Manifest;
+import org.dshaver.sins.domain.ingest.player.Player;
+import org.dshaver.sins.domain.ingest.player.PlayerType;
 import org.dshaver.sins.domain.ingest.research.ResearchSubject;
 import org.dshaver.sins.domain.ingest.unititem.EmpireModifier;
 import org.dshaver.sins.domain.ingest.unititem.UnitItem;
@@ -17,33 +19,44 @@ import java.util.stream.Collectors;
 
 public class ManifestService {
 
-    private static Map<String, String> localizedText;
+    private final GameFileService gameFileService;
 
-    private final String steamDir;
-
-    public ManifestService(String steamDir) {
-        this.steamDir = steamDir;
+    public ManifestService(GameFileService gameFileService) {
+        this.gameFileService = gameFileService;
     }
 
     public Map<String, String> getLocalizedText() {
-        if (localizedText == null) {
-            localizedText = FileTools.readLocalizedTextFile(steamDir);
-        }
+        return gameFileService.getLocalizedText();
+    }
 
-        return localizedText;
+    public Manifest<PlayerType, Player> loadPlayerManifest() {
+        Manifest<PlayerType, Player> playerManifest = FileTools.loadManifest(new Manifest<>(), gameFileService.getPlayerManifestPath());
+
+        // Load player files
+        Map<String, Player> playerMap = playerManifest.getIds().stream()
+                .map(gameFileService::readPlayerFile)
+                .collect(Collectors.toMap(Player::getId, Function.identity()));
+
+        playerManifest.setIdMap(playerMap);
+
+        // Organize by type
+        Multimap<PlayerType, Player> typeIndex = ArrayListMultimap.create();
+        playerMap.values().forEach(player -> typeIndex.put(PlayerType.getType(player), player));
+        playerManifest.setTypeIndex(typeIndex);
+
+        return playerManifest;
     }
 
     public Manifest<UnitItemType, UnitItem> loadUnitItemManifest() {
-        Manifest<UnitItemType, UnitItem> unitItemManifest = FileTools.loadUnitItemManifest(steamDir);
+        Manifest<UnitItemType, UnitItem> unitItemManifest = FileTools.loadManifest(new Manifest<>(), gameFileService.getUnitItemManifestPath());
 
         System.out.println(STR."Loaded \{unitItemManifest.getIds().size()} unitItemIds");
 
-        // TODO Actually hook this up to grab tier!
         Manifest<String, ResearchSubject> researchSubjectManifest = loadResearchSubjectManifest();
 
         // Organize by id
         Map<String, UnitItem> unitItemMap = unitItemManifest.getIds().stream()
-                .map(id -> FileTools.readUnitItemFile(steamDir, id))
+                .map(gameFileService::readUnitItemFile)
                 .map(item -> populateUnitItem(item, researchSubjectManifest))
                 .collect(Collectors.toMap(UnitItem::getId, Function.identity()));
 
@@ -65,23 +78,23 @@ public class ManifestService {
 
         if (unitItem.getPlayerModifiers() != null && unitItem.getPlayerModifiers().getEmpireModifiers() != null) {
             List<EmpireModifier> modifiers = unitItem.getPlayerModifiers().getEmpireModifiers();
-            modifiers.stream().forEach(modifier -> {
-                modifier.setModifierType(localizedText.get(STR."empire_modifier.\{modifier.getModifierType()}"));
+            modifiers.forEach(modifier -> {
+                modifier.setModifierType(gameFileService.getLocalizedTextForKey((STR."empire_modifier.\{modifier.getModifierType()}")));
                 modifier.setEffect();
             });
         }
 
         if (unitItem.getPlanetModifiers() != null) {
             unitItem.getPlanetModifiers().forEach(modifier -> {
-                modifier.setName(localizedText.get(STR."planet_modifier.\{modifier.getModifierType()}"));
+                modifier.setName(gameFileService.getLocalizedTextForKey(STR."planet_modifier.\{modifier.getModifierType()}"));
                 modifier.setEffect();
             });
         }
 
         // Set Ability name
         // localized_text keys are inconsistent!
-        Optional<String> abilityName = Optional.ofNullable(localizedText.get(STR."\{unitItem.getAbility()}_unit_item_name"))
-                .or(() -> Optional.ofNullable(localizedText.get(STR."\{unitItem.getAbility()}_name")));
+        Optional<String> abilityName = Optional.ofNullable(gameFileService.getLocalizedTextForKey(STR."\{unitItem.getAbility()}_unit_item_name"))
+                .or(() -> Optional.ofNullable(gameFileService.getLocalizedTextForKey(STR."\{unitItem.getAbility()}_name")));
 
         if (StringUtils.isNotBlank(unitItem.getAbility()) && abilityName.isEmpty()) {
             System.out.println("Could not find ability name for " + unitItem.getAbility());
@@ -91,7 +104,7 @@ public class ManifestService {
 
         // Set prerequisites
         if (!unitItem.getPrerequisitesIds().isEmpty()) {
-            unitItem.setPrerequisites(unitItem.getPrerequisitesIds().stream().map(s -> localizedText.get(STR."\{s}_research_subject_name")).collect(Collectors.toList()));
+            unitItem.setPrerequisites(unitItem.getPrerequisitesIds().stream().map(s -> gameFileService.getLocalizedTextForKey(STR."\{s}_research_subject_name")).collect(Collectors.toList()));
             int maxPrereqTier = unitItem.getPrerequisitesIds().stream()
                     .map(prereq -> researchManifest.getIdMap().get(prereq))
                     .mapToInt(ResearchSubject::getTier)
@@ -111,13 +124,13 @@ public class ManifestService {
     }
 
     public Manifest<String, ResearchSubject> loadResearchSubjectManifest() {
-        Manifest<String, ResearchSubject> manifest = FileTools.loadResearchSubjectManifest(steamDir);
+        Manifest<String, ResearchSubject> manifest = FileTools.loadManifest(new Manifest<>(), gameFileService.getResearchSubjectManifest());
 
         System.out.println(STR."Loaded \{manifest.getIds().size()} research subject ids");
 
         // Organize by id
         Map<String, ResearchSubject> researchSubjectMap = manifest.getIds().stream()
-                .map(id -> FileTools.readResearchSubjectFile(steamDir, id))
+                .map(gameFileService::readResearchSubjectFile)
                 .collect(Collectors.toMap(ResearchSubject::getId, Function.identity()));
 
         manifest.setIdMap(researchSubjectMap);

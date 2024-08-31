@@ -6,8 +6,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.dshaver.sins.domain.Manifest;
 import org.dshaver.sins.domain.ingest.unit.*;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -57,8 +55,8 @@ public class UnitService {
             unit = collapseWeapons(unit);
         }
 
-        unit.setName(gameFileService.getLocalizedText(getNameProperty(unit.getId())));
-        unit.setDescription(gameFileService.getLocalizedText(getDescriptionProperty(unit.getId())));
+        unit.setName(gameFileService.getLocalizedTextForKey(getNameProperty(unit.getId())));
+        unit.setDescription(gameFileService.getLocalizedTextForKey(getDescriptionProperty(unit.getId())));
 
         return unit;
     }
@@ -74,7 +72,7 @@ public class UnitService {
 
         unit.getWeapons().getWeapons().forEach(weapon -> {
             WeaponFile weaponFile = weaponMap.get(weapon.getWeapon());
-            String weaponName = gameFileService.getLocalizedText(weaponFile.getName());
+            String weaponName = gameFileService.getLocalizedTextForKey(weaponFile.getName());
             weapon.fromWeaponFile(weaponMap.get(weapon.getWeapon()), weaponName);
         });
 

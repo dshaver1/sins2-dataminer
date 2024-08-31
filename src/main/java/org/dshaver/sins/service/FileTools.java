@@ -11,6 +11,7 @@ import org.dshaver.sins.domain.export.WikiPlanetItem;
 import org.dshaver.sins.domain.export.WikiStructure;
 import org.dshaver.sins.domain.export.WikiUnit;
 import org.dshaver.sins.domain.ingest.ManifestFile;
+import org.dshaver.sins.domain.ingest.player.Player;
 import org.dshaver.sins.domain.ingest.research.ResearchSubject;
 import org.dshaver.sins.domain.ingest.unit.Unit;
 import org.dshaver.sins.domain.ingest.unit.UnitType;
@@ -33,8 +34,6 @@ import static org.apache.commons.io.FileUtils.writeStringToFile;
 public class FileTools {
 
     private static final String ENTITY_DIR = "entities";
-    private static final String UNIT_ITEM_MANIFEST_FILE_PATH = "entities/unit_item.entity_manifest";
-    private static final String RESEARCH_SUBJECT_MANIFEST_FILE_PATH = "entities/research_subject.entity_manifest";
     private static final String UNIT_MANIFEST_FILE_PATH = "entities/unit.entity_manifest";
     private static final String LOCALIZED_TEXT_FILE_PATH = "localized_text/en.localized_text";
     private static final String UNIT_JSON_OUTPUT_NAME = "SoaSE2_units.json";
@@ -117,6 +116,21 @@ public class FileTools {
             }
 
             return unit;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Player readPlayerFile(String steamDir, String playerId) {
+        var playerPath = getEntityPath(steamDir, STR."\{playerId}.player");
+        System.out.println(STR."Reading player file \{playerPath}");
+
+        try (InputStream is = Files.newInputStream(playerPath)) {
+            Player player = objectMapper.readValue(is, Player.class);
+
+            player.setId(playerId);
+
+            return player;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -275,28 +289,11 @@ public class FileTools {
         return Path.of(steamDir).resolve(filePart);
     }
 
-    public static Manifest<String, ResearchSubject> loadResearchSubjectManifest(String steamDir) {
-        System.out.println("Reading research subject manifest");
-        Path path = getPath(steamDir, RESEARCH_SUBJECT_MANIFEST_FILE_PATH);
+    public static <T, U> Manifest<T, U> loadManifest(Manifest<T, U> manifest, Path pathToManifest) {
+        System.out.println("Reading manifest " + pathToManifest.toAbsolutePath());
 
-        try (InputStream is = Files.newInputStream(path)) {
+        try (InputStream is = Files.newInputStream(pathToManifest)) {
             ManifestFile manifestFile = objectMapper.readValue(is, ManifestFile.class);
-            Manifest<String, ResearchSubject> manifest = new Manifest<>();
-            manifest.setIds(manifestFile.getIds());
-
-            return manifest;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static Manifest<UnitItemType, UnitItem> loadUnitItemManifest(String steamDir) {
-        System.out.println("Reading unit item manifest");
-        Path path = getPath(steamDir, UNIT_ITEM_MANIFEST_FILE_PATH);
-
-        try (InputStream is = Files.newInputStream(path)) {
-            ManifestFile manifestFile = objectMapper.readValue(is, ManifestFile.class);
-            Manifest<UnitItemType, UnitItem> manifest = new Manifest<>();
             manifest.setIds(manifestFile.getIds());
 
             return manifest;
